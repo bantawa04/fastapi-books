@@ -29,3 +29,7 @@ class UpdateUserRequest(BaseModel):
     username: str = Field(max_length=8)
     password: str = Field(max_length=40)
     email: str = Field(min_length=6)
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
