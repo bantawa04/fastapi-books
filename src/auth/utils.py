@@ -30,7 +30,7 @@ def create_access_token(
     )
 
     payload["jti"] = str(uuid.uuid4())
-    payload["refresh"] = refresh_token
+    payload["refresh_token"] = refresh_token
 
     token = jwt.encode(
         payload=payload, key=Config.JWT_SECRET, algorithm=Config.JWT_ALGO
