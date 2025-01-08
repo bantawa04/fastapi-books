@@ -6,13 +6,15 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.exceptions import HTTPException
 from .utils import create_access_token, decode_token, verify_password
 from fastapi.responses import JSONResponse
-from datetime import timedelta
+from datetime import timedelta, datetime
+from .dependencies import RefreshTokenBearer
 
 
 auth_router = APIRouter()
 user_service = UserService()
 
-REFRESH_TOKEN_EXPIARY= 7
+REFRESH_TOKEN_EXPIARY = 7
+
 
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=User)
 async def create_user_account(
@@ -39,31 +41,41 @@ async def login(data: LoginRequest, session: AsyncSession = Depends(get_session)
     password = data.password
 
     user = await user_service.get_user_by_email(email, session)
-    
+
     if user is not None:
         password_valid = verify_password(password, user.password)
 
         if password_valid:
             user_data = {"email": user.email, "user_uid": str(user.uid)}
-            access_token = create_access_token(
-                user_data
-            )
+            access_token = create_access_token(user_data)
 
             refresh_token = create_access_token(
                 user_data,
                 refresh_token=True,
-                expiary=timedelta(days=REFRESH_TOKEN_EXPIARY)
+                expiary=timedelta(days=REFRESH_TOKEN_EXPIARY),
             )
-           
+
             return JSONResponse(
                 content={
                     "detail": "Login successful",
                     "access_token": access_token,
                     "refresh_token": refresh_token,
-                    "user": {
-                        email: user.email,
-                        "uid": str(user.uid)
-                    }
+                    "user": {email: user.email, "uid": str(user.uid)},
                 }
-            ) 
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail= "Invalid email or password")           
+            )
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="Invalid email or password"
+    )
+
+
+@auth_router.get("/refresh_token")
+async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer())):
+    expiary_timestamp = token_details["exp"]
+
+    if datetime.fromtimestamp(expiary_timestamp) > datetime.now():
+        new_access_token = create_access_token(user_data=token_details["user"])
+        return JSONResponse(content={"access_token": new_access_token})
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token"
+    )
