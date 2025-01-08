@@ -7,11 +7,12 @@ from fastapi.exceptions import HTTPException
 from .utils import create_access_token, verify_password
 from fastapi.responses import JSONResponse
 from datetime import timedelta, datetime
-from .dependencies import RefreshTokenBearer, AccessTokenBearer
+from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from src.db.redis import add_jti_to_blacklist
 
 auth_router = APIRouter()
 user_service = UserService()
+role_checker = RoleChecker(['admin','user'])
 
 REFRESH_TOKEN_EXPIARY = 7
 
@@ -46,7 +47,7 @@ async def login(data: LoginRequest, session: AsyncSession = Depends(get_session)
         password_valid = verify_password(password, user.password)
 
         if password_valid:
-            user_data = {"email": user.email, "user_uid": str(user.uid)}
+            user_data = {"email": user.email, "user_uid": str(user.uid), "role": user.role}
             access_token = create_access_token(user_data)
 
             refresh_token = create_access_token(
@@ -90,3 +91,7 @@ async def revoke_token(token_details: dict = Depends(AccessTokenBearer())):
     return JSONResponse(
         content={"detail": "Logged out sucessfully"}, status_code=status.HTTP_200_OK
     )
+
+@auth_router.get("/me")
+async def get_current_user(user=Depends(get_current_user), _:bool=Depends(role_checker)):
+    return user
