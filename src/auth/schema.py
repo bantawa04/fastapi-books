@@ -20,7 +20,7 @@ class UserBooksModel(User):
 class CreateUserRequest(BaseModel):
     first_name: str
     last_name: str
-    username: str = Field(min_length=8)
+    username: str = Field(min_length=5)
     password: str = Field(min_length=5)
     email: str = Field(min_length=6)
 
