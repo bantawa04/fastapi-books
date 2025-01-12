@@ -5,7 +5,7 @@ from src.reviews.routes import review_router
 from contextlib import asynccontextmanager
 from src.db.main import init_db
 from src.auth.dependencies import RoleChecker
-
+from src.tags.routes import tags_router
 role_checker = RoleChecker(["admin", "user"])
 
 
@@ -32,3 +32,4 @@ app.include_router(
 )
 app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["Auth"])
 app.include_router(review_router, prefix=f"/api/{version}/reviews", tags=["Review"])
+app.include_router(tags_router, prefix=f"/api/{version}/tags", tags=["Tag"])

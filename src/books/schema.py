@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import uuid
 from datetime import datetime, date
 
-from src.db.models import Review
+from src.db.models import Review, Tag
 
 
 class Book(BaseModel):
@@ -21,6 +21,7 @@ class Book(BaseModel):
 
 class BookDetailModel(Book):
     reviews: List[Review]
+    tags: List[Tag]
 
 
 class CreateBookRequest(BaseModel):
